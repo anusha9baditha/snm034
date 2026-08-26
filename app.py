@@ -19,9 +19,9 @@ def register():
             mydb.ping(reconnect=True) #it reconnect mysql server autoimatically
             cursor=mydb.cursor(buffered=True)
             cursor.execute('select account_status from userdata where useremail=%s',[useremail])
-            db_response=cursor.fetchone() #('inactive',)
+            db_response=cursor.fetchone() #('active',) or None
             print(db_response)
-            server_otp=genotp()
+            server_otp=genotp() #'M7hS4f'
             otp_expiry_time=datetime.now()+timedelta(minutes=5)
             if  db_response:
                 if db_response[0]=='active':
@@ -74,9 +74,22 @@ def otp_verify(useremail):
 def login():
     if request.method=='POST':
         #accept login details
-        #verify with db details
-        #create session 
-        return redirect(url_for('dashboard'))
+        login_useremail=request.form.get('useremail') 
+        login_password=request.form.get('password')
+        mydb.ping(reconnect=True)
+        cursor=mydb.cursor(buffered=True)
+        cursor.execute('select account_status,userpassword from userdata where useremail=%s',[login_useremail])
+        user_data=cursor.fetchone()
+        print(user_data)
+        if not user_data:
+            return 'Email Not found pls try again'
+        if user_data[0]=='active':
+            if user_data[1]==login_password:
+                return redirect(url_for('dashboard'))
+            else:
+                return 'Invalid password'
+        else:
+            return 'User Not verified pls register again'
     return render_template('login.html')
 @app.route('/dashboard',methods=['GET'])
 def dashboard():
