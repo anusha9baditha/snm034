@@ -119,7 +119,33 @@ def dashboard():
     return render_template('dashboard.html')
 @app.route('/addnotes',methods=['GET','POST'])
 def addnotes():
-    return render_template('addnotes.html')
+    try:
+        if not session.get('user'):
+            flash('To access addnotes pls login first')
+            return redirect(url_for('login'))
+        if request.method=='POST':
+            print(request.form)
+            Notestitle=request.form.get('title') #python
+            Notescontent=request.form.get('content')
+            if not Notestitle:
+                flash('Title is required')
+                return redirect(url_for('addnotes'))
+            mydb.ping(reconnect=True)
+            cursor=mydb.cursor(buffered=True)
+            cursor.execute('select userid from userdata where useremail=%s',[session.get('user')])
+            userid=cursor.fetchone() #(1,) or None
+            if not userid:
+                flash('User not found plscheck')
+            cursor.execute('insert into notesdata(notestitle,notescontent,added_by) values(%s,%s,%s)',[Notestitle,Notescontent,userid[0]])
+            mydb.commit()
+            cursor.close()
+            flash(f'Notes added successfully {Notestitle}')
+            return redirect(url_for('addnotes'))
+        return render_template('addnotes.html')
+    except Exception as e:
+        print('Error in added notes',e)
+        flash('Could add notes ')
+        return redirect(url_for('addnotes'))
 @app.route('/viewallnotes',methods=['GET','POST'])
 def viewallnotes():
     return render_template('viewallnotes.html')
