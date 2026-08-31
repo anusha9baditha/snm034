@@ -146,9 +146,40 @@ def addnotes():
         print('Error in added notes',e)
         flash('Could add notes ')
         return redirect(url_for('addnotes'))
-@app.route('/viewallnotes',methods=['GET','POST'])
+@app.route('/viewallnotes',methods=['GET'])
 def viewallnotes():
-    return render_template('viewallnotes.html')
+    try:
+        if not session.get('user'):
+            flash('pls login first ')
+            return redirect(url_for('login'))
+        mydb.ping(reconnect=True)
+        cursor=mydb.cursor(buffered=True)
+        cursor.execute('select notesid,notestitle,created_at from notesdata inner join userdata on notesdata.added_by=userdata.userid where userdata.useremail=%s',[session.get('user')])
+        notes_data=cursor.fetchall()
+        print(notes_data) #list of tuples
+        return render_template('viewallnotes.html',notes_data=notes_data)
+    except Exception as e:
+        print('Error in fetch notes',e)
+        flash('Could fetch notes ')
+        return redirect(url_for('dashboard'))
+
+@app.route('/viewnotes/<notesid>',methods=['GET'])
+def viewnotes(notesid):
+    try:
+        if not session.get('user'):
+            flash('pls login first ')
+            return redirect(url_for('login'))
+        mydb.ping(reconnect=True)
+        cursor=mydb.cursor(buffered=True)
+        cursor.execute('select notesid,notestitle,notescontent,created_at from notesdata inner join userdata on notesdata.added_by=userdata.userid where userdata.useremail=%s and notesid=%s',[session.get('user'),notesid])
+        data=cursor.fetchone()
+        print(data) #list of tuple
+        return render_template('viewnotes.html',data=data)
+    except Exception as e:
+        print('Error in fetch notes',e)
+        flash('Could fetch notes ')
+        return redirect(url_for('dashboard'))
+
 @app.route('/userlogout',methods=['GET'])
 def userlogout():
     if not session.get('user'):
