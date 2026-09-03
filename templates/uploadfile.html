@@ -1,0 +1,34 @@
+{% extends 'dashboard.html' %}<!--  it will inherit dashboard page -->
+{% block title %}<title>UploadFile</title>{% endblock %}
+{% block addcss %}<link rel="stylesheet" href="{{url_for('static',filename='addnotes.css')}}"/>{% endblock %}
+
+
+
+{% block content %}
+<div class="Content">
+    <div class="note-card">
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+            {{ message }}
+            {% endfor %}
+        {% endif %}
+        {% endwith %}
+        <h2 class="note-title">Update Filedata</h2>
+        <p class="note-subtitle">
+            Store Important Filesdata
+        </p>
+        <form  method="post" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="title">UploadFile</label>
+                <input type="file" id="title" name="filedata" placeholder="Upload file here" required>
+            </div>
+            
+            <button type="submit" class="add-button">
+                submit
+            </button>
+        </form>
+        <a href="/" class="back-link">Back to Home</a>
+    </div>
+</div>
+{% endblock %}

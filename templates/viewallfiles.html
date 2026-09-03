@@ -1,5 +1,5 @@
 {% extends 'dashboard.html' %}
-    {% block title %}<title>Notes</title>{% endblock %}
+    {% block title %}<title>Files</title>{% endblock %}
     {% block addcss %}<link rel="stylesheet" href="{{url_for('static',filename='viewallnotes.css')}}"/>{% endblock %}
 
 
@@ -13,29 +13,31 @@
             {% endfor %}
         {% endif %}
         {% endwith %}
-            <h1 class="notes-heading">Notes</h1>
+            <h1 class="notes-heading">All Files</h1>
             <div class="notes-table-wrapper">
                 <table class="notes-table">
                     <thead class="notes-table-head">
                         <tr class="notes-table-row">
-                            <th class="notes-table-header notes-id-column">Note ID</th>
-                            <th class="notes-table-header">Note Title</th>
+                            <th class="notes-table-header notes-id-column">File ID</th>
+                            <th class="notes-table-header">Filename</th>
                             <th class="notes-table-header notes-date-column">Created At</th>
                             <th class="notes-table-header">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% if notes_data%}
-                        {% for i in notes_data %}
+                        {% if files_data%}
+                        {% for i in files_data %}
                         <tr class="notes-table-row">
                             <td class="notes-table-data notes-id-column">{{i[0]}}</td>
                             <td class="notes-table-data notes-heading-column">{{i[1]}}</td>
                             <td class="notes-table-data notes-date-column">{{i[2]}}</td>
-                            <td><a href="{{url_for('viewnotes',notesid=i[0])}}">view</a></td>
-                            <td><a href="{{url_for('updatenotes',notesid=i[0])}}">update</a></td>
-                            <td><a href="{{url_for('deletenotes',notesid=i[0])}}">Delete</a></td>
+                            <td><a href="#">view</a></td>
+                            <td><a href="#">Download</a></td>
+                            <td><a href="#">Delete</a></td>
                         </tr>
                         {% endfor %}
+                        {% else %}
+                        <p>NO files data</p>
                         {% endif %}
                      
                     </tbody>
