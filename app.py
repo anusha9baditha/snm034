@@ -1,4 +1,5 @@
-from flask import Flask,request,redirect,url_for,render_template,session,flash
+from flask import Flask,request,redirect,url_for,render_template,session,flash,send_file
+from io import BytesIO
 from flask_session import Session #stores secure server side session 
 from otp import genotp
 from cmail import send_mail
@@ -270,6 +271,67 @@ def viewallfiles():
         print('Error in fetch files',e)
         flash('Couldnot fetch filesdata ')
         return redirect(url_for('dashboard'))
-
+@app.route('/deletefile/<fileid>',methods=['GET'])
+def deletefile(fileid):
+    try:
+        if not session.get('user'):
+            flash('pls login first ')
+            return redirect(url_for('login'))
+        mydb.ping(reconnect=True)
+        cursor=mydb.cursor(buffered=True)
+        cursor.execute('select count(*) from filesdata inner join userdata on filesdata.added_by=userdata.userid where userdata.useremail=%s and filesid=%s',[session.get('user'),fileid])
+        data=cursor.fetchone() #(1,)
+        if not data:
+            flash('file not found')
+            return redirect(url_for('viewallfiles'))
+        cursor.execute('delete from filesdata where filesid=%s and added_by=(select userid from userdata where useremail=%s)',[fileid,session.get('user')])
+        mydb.commit()
+        flash('file deleted successfully')
+        return redirect(url_for('viewallfiles'))
+    except Exception as e:
+        mydb.rollback()
+        print('Error in delete files',e)
+        flash('Could not  delete file')
+        return redirect(url_for('viewallfiles'))
+@app.route('/viewfile/<fileid>',methods=['GET'])
+def viewfile(fileid):
+    try:
+        if not session.get('user'):
+            flash('to view file pls login first')
+            return redirect(url_for('login'))
+        mydb.ping(reconnect=True)
+        cursor=mydb.cursor(buffered=True)
+        cursor.execute('select filesid,filename,filedata from filesdata inner join userdata on filesdata.added_by=userdata.userid where userdata.useremail=%s and filesid=%s',[session.get('user'),fileid])
+        data=cursor.fetchone() #(1,'otp.py','filedata')
+        if not data:
+            flash('file not found')
+            return redirect(url_for('viewallfiles'))
+        array_data=BytesIO(data[2])
+        return send_file(array_data,as_attachment=False,download_name=data[1])
+    except Exception as e:
+        print('Error in fetch files',e)
+        flash('Could not  file file')
+        return redirect(url_for('viewallfiles'))
+@app.route('/downloadfile/<fileid>',methods=['GET'])
+def downloadfile(fileid):
+    try:
+        if not session.get('user'):
+            flash('to view file pls login first')
+            return redirect(url_for('login'))
+        mydb.ping(reconnect=True)
+        cursor=mydb.cursor(buffered=True)
+        cursor.execute('select filesid,filename,filedata from filesdata inner join userdata on filesdata.added_by=userdata.userid where userdata.useremail=%s and filesid=%s',[session.get('user'),fileid])
+        data=cursor.fetchone() #(1,'otp.py','filedata')
+        if not data:
+            flash('file not found')
+            return redirect(url_for('viewallfiles'))
+        array_data=BytesIO(data[2])
+        return send_file(array_data,as_attachment=True,download_name=data[1])
+    except Exception as e:
+        print('Error in fetch files',e)
+        flash('Could not  file file')
+        return redirect(url_for('viewallfiles'))
+    
+    
 if __name__=='__main__':
     app.run(debug=True,use_reloader=True)

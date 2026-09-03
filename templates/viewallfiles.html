@@ -31,9 +31,9 @@
                             <td class="notes-table-data notes-id-column">{{i[0]}}</td>
                             <td class="notes-table-data notes-heading-column">{{i[1]}}</td>
                             <td class="notes-table-data notes-date-column">{{i[2]}}</td>
-                            <td><a href="#">view</a></td>
-                            <td><a href="#">Download</a></td>
-                            <td><a href="#">Delete</a></td>
+                            <td><a href="{{url_for('viewfile',fileid=i[0])}}">view</a></td>
+                            <td><a href="{{url_for('downloadfile',fileid=i[0])}}">Download</a></td>
+                            <td><a href="{{url_for('deletefile',fileid=i[0])}}">Delete</a></td>
                         </tr>
                         {% endfor %}
                         {% else %}
