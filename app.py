@@ -1,5 +1,6 @@
 from flask import Flask,request,redirect,url_for,render_template,session,flash,send_file
 from io import BytesIO
+import re
 from flask_session import Session #stores secure server side session 
 from otp import genotp
 from cmail import send_mail
@@ -331,7 +332,63 @@ def downloadfile(fileid):
         print('Error in fetch files',e)
         flash('Could not  file file')
         return redirect(url_for('viewallfiles'))
-    
+@app.route('/usersearch',methods=['POST'])
+def usersearch():
+    try:
+        if not session.get('user'):
+            flash('to view file pls login first')
+            return redirect(url_for('login'))
+        searchdata=request.form.get('sdata') #'2026'
+        strg=['A-Za-z0-9']
+        pattern=re.compile(f'^{strg}',re.IGNORECASE) 
+        if pattern.match(searchdata):
+            #database search
+            mydb.ping(reconnect=True)
+            cursor=mydb.cursor(buffered=True)
+            cursor.execute('select notesid,notestitle,created_at from notesdata inner join userdata on notesdata.added_by=userdata.userid where userdata.useremail=%s and (notesid like %s or notestitle like %s or created_at like %s)',[session.get('user'),searchdata+'%',searchdata+'%',searchdata+'%'])
+            notesdata=cursor.fetchall()
+            cursor.execute('select filesid,filename,created_at from filesdata inner join userdata on filesdata.added_by=userdata.userid where userdata.useremail=%s and (filesid like %s or filename like %s or created_at  like %s)',[session.get('user'),searchdata+'%',searchdata+'%',searchdata+'%'])
+            filesdata=cursor.fetchall()
+            return render_template('searchresult.html',notesdata=notesdata,filesdata=filesdata)
+        else:
+            flash('Invalid search data')
+            return redirect(url_for('dashboard'))
+    except Exception as e:
+        print('Error in fetch data',e)
+        flash('Could not  fetch search data')
+        return redirect(url_for('dashboard'))
+@app.route('/forgotpassword',methods=['GET','POST'])
+def forgotpassword():
+    try:
+        if request.method=='POST':
+            forgot_email=request.form.get('email')
+            mydb.ping(reconnect=True)
+            cursor=mydb.cursor(buffered=True)
+            cursor.execute('select account_status from userdata where useremail=%s',[forgot_email])
+            db_response=cursor.fetchone() #('active',) or None
+            if not  db_response:
+                flash('Could not fetch user data')
+                return redirect(url_for('forgotpassword'))
+            if db_response[0]=='Inactive':
+                flash('User Note verified')
+                return redirect(url_for('register'))
+            if db_response[0]=='suspended':
+                flash('this email is suspended')
+                return redirect(url_for('register'))
+            resetlink=f" use the link to password update {url_for('newpassword',data=forgot_email,_external=True)}"
+            subject='Resetlink for Simple NOtes Management'
+            send_mail(to=forgot_email,subject=subject,body=resetlink)
+            flash('Reset link has been sent to given mail ')
+            return redirect(url_for('forgotpassword'))
+        return render_template('forgotpassword.html')
+    except Exception as e:
+            print('Error in forgotpassword ',e)
+            flash('Could not sent resetlink ')
+            return redirect(url_for('forgotpassword'))
+@app.route('/newpassword/<data>')
+def newpassword(data):
+    return 'dummy'    
+
     
 if __name__=='__main__':
     app.run(debug=True,use_reloader=True)
